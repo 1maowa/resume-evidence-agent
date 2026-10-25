@@ -1,0 +1,16 @@
+# Local secrets and environments
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+.env
+
+# Runtime state and generated artifacts
+.career_agent/
+.work/
+.playwright-cli/
+output/
+reports/*
+!reports/.gitkeep
+

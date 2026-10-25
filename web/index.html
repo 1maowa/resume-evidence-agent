@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <meta
+      name="description"
+      content="上传简历和岗位描述，查看可追溯的技能匹配证据与修改建议。"
+    >
+    <title>简历与岗位证据匹配</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#mainContent">跳到主要内容</a>
+    <header class="app-header">
+      <a class="brand" href="/" aria-label="简历与岗位证据匹配首页">
+        <span class="brand-mark" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </span>
+        <span class="brand-copy">
+          <strong>Resume Evidence</strong>
+          <small>求职材料分析工作台</small>
+        </span>
+      </a>
+      <div class="system-state" aria-live="polite">
+        <span class="state-dot" id="stateDot"></span>
+        <span id="stateText">正在检查运行环境</span>
+      </div>
+    </header>
+
+    <main class="page" id="mainContent">
+      <section class="intro" aria-labelledby="pageTitle">
+        <div>
+          <p class="context-line">岗位要求与真实经历逐项对照</p>
+          <h1 id="pageTitle">让每一份简历，<br>都有证据可查。</h1>
+        </div>
+        <div class="intro-note">
+          <p>
+            LLM 负责拆解岗位要求、识别技术词和匹配简历证据；工具负责结构校验、加权计分与报告保存。
+            默认隐藏邮箱与电话号码。
+          </p>
+          <div class="capability-row" aria-label="系统能力">
+            <span>四类工具</span>
+            <span>MCP 可复用</span>
+            <span>LLM 结构化分析</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace" aria-label="简历匹配工作区">
+        <form class="intake" id="matchForm" novalidate>
+          <div class="section-heading">
+            <div>
+              <span class="section-index">输入</span>
+              <h2>准备匹配材料</h2>
+            </div>
+            <button class="text-button" id="demoButton" type="button">运行示例</button>
+          </div>
+
+          <div class="field-block">
+            <div class="field-label-row">
+              <label for="resumeInput">简历文件</label>
+              <span>PDF、DOCX、TXT、Markdown</span>
+            </div>
+            <label class="file-drop" id="resumeDrop" for="resumeInput">
+              <input
+                id="resumeInput"
+                name="resume"
+                type="file"
+                accept=".pdf,.docx,.txt,.md,.markdown"
+                required
+              >
+              <span class="file-symbol" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="img">
+                  <path d="M7 3.75h7l3 3V20.25H7z"></path>
+                  <path d="M14 3.75v4h4M9.75 12h4.5M9.75 15.5h4.5"></path>
+                </svg>
+              </span>
+              <span class="drop-copy">
+                <strong id="resumeFileName">拖入简历，或点击选择</strong>
+                <small id="resumeFileMeta">文件只在本次分析中临时使用</small>
+              </span>
+              <span class="choose-file">选择文件</span>
+            </label>
+          </div>
+
+          <div class="field-block job-field">
+            <div class="field-label-row">
+              <span class="field-label" id="jobSourceLabel">岗位来源</span>
+              <span>任选一种方式</span>
+            </div>
+            <div class="source-tabs" role="tablist" aria-labelledby="jobSourceLabel">
+              <button
+                class="source-tab is-active"
+                id="tabUrl"
+                type="button"
+                role="tab"
+                aria-selected="true"
+                aria-controls="urlPane"
+                tabindex="0"
+                data-source="url"
+              >招聘链接</button>
+              <button
+                class="source-tab"
+                id="tabText"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="textPane"
+                tabindex="-1"
+                data-source="text"
+              >粘贴正文</button>
+              <button
+                class="source-tab"
+                id="tabFile"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="filePane"
+                tabindex="-1"
+                data-source="file"
+              >岗位文件</button>
+            </div>
+
+            <div
+              class="source-pane is-active"
+              id="urlPane"
+              role="tabpanel"
+              aria-labelledby="tabUrl"
+            >
+              <label class="visually-hidden" for="jobUrl">招聘页面链接</label>
+              <input
+                class="text-input"
+                id="jobUrl"
+                name="job_url"
+                type="url"
+                inputmode="url"
+                placeholder="https://example.com/jobs/data-intern"
+              >
+            </div>
+
+            <div
+              class="source-pane"
+              id="textPane"
+              role="tabpanel"
+              aria-labelledby="tabText"
+              hidden
+            >
+              <label class="visually-hidden" for="jobText">岗位正文</label>
+              <textarea
+                class="text-area"
+                id="jobText"
+                name="job_text"
+                rows="6"
+                placeholder="粘贴岗位职责、任职要求或加分项"
+              ></textarea>
+            </div>
+
+            <div
+              class="source-pane"
+              id="filePane"
+              role="tabpanel"
+              aria-labelledby="tabFile"
+              hidden
+            >
+              <label class="file-compact" for="jobFile">
+                <input
+                  id="jobFile"
+                  name="job_file"
+                  type="file"
+                  accept=".txt,.md,.markdown,.html,.htm"
+                >
+                <span>
+                  <strong id="jobFileName">选择岗位文件</strong>
+                  <small>TXT、Markdown 或 HTML，最大 10 MB</small>
+                </span>
+                <span class="choose-file">浏览</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="setting-block">
+            <div class="engine-card">
+              <span>分析引擎</span>
+              <div>
+                <strong>LLM 结构化分析</strong>
+                <small>技术词识别 · 简历证据匹配 · 简历速览</small>
+              </div>
+            </div>
+            <label class="check-row" for="redactToggle">
+              <input id="redactToggle" name="redact_pii" type="checkbox" checked>
+              <span>
+                <strong>隐藏联系方式</strong>
+                <small>邮箱、电话号码在交给模型前替换</small>
+              </span>
+            </label>
+          </div>
+
+          <p class="form-error" id="formError" role="alert" aria-live="assertive"></p>
+
+          <button class="primary-action" id="submitButton" type="submit">
+            <span>开始证据匹配</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h13M13 6l6 6-6 6"></path>
+            </svg>
+          </button>
+          <p class="privacy-note">
+            报告仅写入本项目的 <code>reports</code> 目录。招聘网站阻止抓取时，请改用粘贴正文或岗位文件。
+          </p>
+        </form>
+
+        <section class="results" aria-labelledby="resultsTitle">
+          <div class="results-head">
+            <div>
+              <span class="section-index">输出</span>
+              <h2 id="resultsTitle">证据卷宗</h2>
+            </div>
+            <span class="mode-badge" id="modeBadge" hidden>—</span>
+          </div>
+
+          <div class="empty-state" id="emptyState">
+            <div class="ledger-lines" aria-hidden="true">
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <div class="empty-copy">
+              <span class="empty-number">00</span>
+              <h3>等待一份匹配材料</h3>
+              <p>完成左侧输入后，这里会显示简历速览、匹配分数、要求缺口、逐项证据和可下载报告。</p>
+            </div>
+            <div class="empty-list" aria-hidden="true">
+              <span>岗位要求</span>
+              <span>简历证据</span>
+              <span>修改建议</span>
+            </div>
+          </div>
+
+          <div class="loading-state" id="loadingState" hidden aria-live="polite">
+            <div class="loader-mark" aria-hidden="true">
+              <span></span><span></span><span></span>
+            </div>
+            <h3 id="loadingTitle">正在读取简历</h3>
+            <p id="loadingCopy">系统会先解析文档，再读取岗位并计算证据。</p>
+            <div class="loading-rail"><span></span></div>
+            <ol class="loading-steps" id="loadingSteps">
+              <li class="is-active">解析简历</li>
+              <li>读取岗位</li>
+              <li>LLM 分析</li>
+              <li>保存报告</li>
+            </ol>
+          </div>
+
+          <div class="result-content" id="resultContent" hidden>
+            <div class="score-panel">
+              <div class="score-stamp" id="scoreStamp" style="--score: 0">
+                <span class="score-number" id="scoreValue">0</span>
+                <span class="score-denominator">/ 100</span>
+              </div>
+              <div class="score-summary">
+                <p class="job-title" id="jobTitle">目标岗位</p>
+                <h3 id="levelText">匹配分析</h3>
+                <p id="scoreNarrative"></p>
+              </div>
+            </div>
+
+            <div class="metric-strip" aria-label="匹配概览">
+              <div>
+                <strong id="requirementCount">0</strong>
+                <span>岗位要求</span>
+              </div>
+              <div>
+                <strong id="matchedCount">0</strong>
+                <span>已有证据</span>
+              </div>
+              <div>
+                <strong id="missingCount">0</strong>
+                <span>待补强</span>
+              </div>
+            </div>
+
+            <div class="resume-brief">
+              <div class="result-section-heading">
+                <h3>简历速览</h3>
+                <span>LLM 基于简历原文生成</span>
+              </div>
+              <p class="resume-summary" id="resumeSummary"></p>
+              <div class="strength-list" id="strengthList"></div>
+            </div>
+
+            <div class="result-section">
+              <div class="result-section-heading">
+                <h3>待补强要求</h3>
+                <span>未在简历中定位到对应证据</span>
+              </div>
+              <div class="skill-tags" id="missingSkills"></div>
+            </div>
+
+            <div class="result-section">
+              <div class="result-section-heading">
+                <h3>逐项匹配</h3>
+                <span id="evidenceCount"></span>
+              </div>
+              <div class="evidence-ledger" id="evidenceLedger"></div>
+            </div>
+
+            <div class="result-section">
+              <div class="result-section-heading">
+                <h3>修改优先级</h3>
+                <span>从缺失项开始调整</span>
+              </div>
+              <ol class="advice-list" id="adviceList"></ol>
+            </div>
+
+            <div class="report-actions">
+              <a class="download-action" id="downloadReport" href="#" download>
+                下载 Markdown 报告
+              </a>
+              <button class="secondary-action" id="copyReport" type="button">复制报告</button>
+              <button class="secondary-action" id="toggleRaw" type="button" aria-expanded="false">
+                查看原文
+              </button>
+            </div>
+            <pre class="raw-report" id="rawReport" hidden></pre>
+
+            <details class="trace-panel">
+              <summary>查看工具调用轨迹</summary>
+              <ol id="traceList"></ol>
+            </details>
+
+            <p class="result-disclaimer">
+              文本证据只说明简历中出现了相关表述，不代表能力已经过背景调查。
+            </p>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <footer class="page-footer">
+      <span>Resume Evidence Agent</span>
+      <span>FastAPI · MCP · Function Calling</span>
+    </footer>
+
+    <template id="evidenceRowTemplate">
+      <article class="evidence-row">
+        <span class="evidence-status"></span>
+        <div class="evidence-requirement">
+          <small></small>
+          <strong></strong>
+        </div>
+        <blockquote></blockquote>
+      </article>
+    </template>
+
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>
